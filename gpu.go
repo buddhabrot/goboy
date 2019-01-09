@@ -17,6 +17,7 @@ const (
 // GPU represents the gpu
 type GPU struct {
 	screen *Screen
+	mmu    *MMU
 	mode   GPUMode
 	mclock uint16
 	line   uint8

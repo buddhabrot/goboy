@@ -12,6 +12,7 @@ type MMU struct {
 	sprite [0x0A0]byte
 	mmio   [0x080]byte
 	zram   [0x080]byte
+	oam    [0xA0]byte
 	inBios bool
 
 	romoffset uint16
@@ -26,11 +27,11 @@ func (mmu *MMU) rb(addr uint16) uint8 {
 			if addr < 0x100 {
 				return mmu.bios[addr]
 			} else {
-
+				// TODO: exit bios
 			}
-		} else {
-			return mmu.rom[addr]
 		}
+
+		return mmu.rom[addr]
 	// ROM 1
 	case 0x1000, 0x2000, 0x3000, 0x4000, 0x5000, 0x6000, 0x7000:
 		return mmu.rom[mmu.romoffset+(addr&0x3FFF)]
@@ -51,15 +52,27 @@ func (mmu *MMU) rb(addr uint16) uint8 {
 			0x800, 0x900, 0xA00, 0xB00,
 			0xC00, 0xD00:
 			return mmu.ram[addr&0x1FFF]
-
+		case 0xE00:
+			if (addr & 0xFF) < 0xA0 {
+				return mmu.oam[addr]
+			} else {
+				return 0x0
+			}
+		case 0xF00:
+			if (addr & 0xFF) >= 0x80 {
+				return mmu.zram[addr&0x7F]
+			} else {
+				// TODO: handle I/O
+				return 0
+			}
 		}
 	}
 
 	return 0x0
 }
 
-func (mmu *MMU) rbrom(addr uint16) uint8 {
-
+func (mmu *MMU) rw(addr uint16) uint16 {
+	return uint16(mmu.rb(addr)) + uint16(mmu.rb(addr+1))<<8
 }
 
 // Init initializes the MMU
