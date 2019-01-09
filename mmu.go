@@ -75,6 +75,45 @@ func (mmu *MMU) rw(addr uint16) uint16 {
 	return uint16(mmu.rb(addr)) + uint16(mmu.rb(addr+1))<<8
 }
 
+func (mmu *MMU) wb(addr uint16, d uint8) {
+	switch 0xF000 & addr {
+	case 0x0000:
+		if mmu.inBios && addr < 0x100 {
+			return
+		}
+		fallthrough
+	case 0x1000, 0x2000, 0x3000, 0x4000,
+		0x5000, 0x6000, 0x7000:
+		return
+	case 0x8000, 0x9000:
+		mmu.vram[addr&0x1FFF] = d
+		// todo: update tile
+	case 0xA000, 0xB000:
+		mmu.xram[addr&0x1FFF] = d
+	case 0xC000, 0xD000, 0xE000:
+		mmu.ram[addr&0x1FFF] = d
+	case 0xF000:
+		switch 0x0F00 & addr {
+		case 0x000, 0x100, 0x200, 0x300,
+			0x400, 0x500, 0x600, 0x700,
+			0x800, 0x900, 0xA00, 0xB00,
+			0xC00, 0xD00:
+			mmu.ram[addr&0x1FFF] = d
+		case 0xE00:
+			if addr&0xFF < 0xA0 {
+				mmu.oam[addr&0xFF] = d
+				// todo: update oam
+			} // todo: always update oam?
+		case 0xF00:
+			if addr&0xFF > 0x7F {
+				mmu.zram[addr&0x7F] = d
+			} else {
+				// TODO: I/O
+			}
+		}
+	}
+}
+
 // Init initializes the MMU
 func (mmu *MMU) Init() {
 	mmu.inBios = true

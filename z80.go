@@ -339,15 +339,18 @@ func (z80 *Z80) Exec(op uint8, mmu *MMU) {
 // Ops
 
 func opsNOP(z80 *Z80, mmu *MMU) {
-
+	// NOP
 }
 
 func opsLDBCnn(z80 *Z80, mmu *MMU) {
-
+	z80.r.c = mmu.rb(z80.r.pc)
+	z80.r.b = mmu.rb(z80.r.pc + 1)
+	z80.r.pc += 2
 }
 
 func opsLDBCmA(z80 *Z80, mmu *MMU) {
-
+	loc := uint16(z80.r.b)<<8 + uint16(z80.r.c)
+	mmu.wb(loc, z80.r.a)
 }
 
 func opsINCBC(z80 *Z80, mmu *MMU) {
